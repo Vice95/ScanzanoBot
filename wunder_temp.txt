@@ -1,8 +1,8 @@
-19.1
+16.2
 Stazione Meteo Parisi - Scanzano Jonico, Basilicata
-17.4
+15.9
 Marconia, Marconia
-http://icons.wxug.com/i/c/k/clear.gif
-Venerdì: Quasi sereno. Max: 21º C. Venti da SSE, da 15 a 25 km/h.
+http://icons.wxug.com/i/c/k/partlycloudy.gif
+Venerdì: Acquazzoni mattutini. Min: 13º C.
 http://icons.wxug.com/i/c/k/nt_partlycloudy.gif
-Venerdì notte: Rasserenamenti in nottata. Min: 13º C. Venti da O variabili.
+Venerdì notte: Acquazzoni mattutini. Min: 13º C. Venti da ONO variabili. Prob. pioggia: 40%.

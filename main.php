@@ -80,7 +80,7 @@ function shell($telegram,$text,$chat_id,$user_id,$location,$reply_to_msg){
 		//The script shows the latest temperature value from various selected personal Wunderground stations. Also, if desired, it shows today's forecast for the selected city. If you want to use Fahrenheit degrees, please change every occurrence of 'temp_c' to 'temp_f' in the code. Be careful to avoid excessive API calls: you have about 120 calls per day before breaking Wunderground Terms!
 		//Script by flapane.com - Latest rev. 30-Dec-14
 		$expiretime=30;     //cache expire time in minutes
-		$apikey="3d577a6a7a7de53b"; //your wunderground api key - 500 calls per day maximum!
+		$apikey=WAPI; //your wunderground api key - 500 calls per day maximum!
 		$cachename="./wunder_temp.txt"; //name of the cachefile
 		$forecastlang="IT"; //select forecasts language using uppercase letters
 		$forecastcity="Italy/Scanzano"; //in form of State/City in english. Leave it EMPTY if you don't want any forecasts

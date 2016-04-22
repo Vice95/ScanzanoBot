@@ -6,7 +6,7 @@ define('API',''); // api google shortner
 define('TELEGRAM_BOT',''); // token Telegram Bot
 define('BOT_WEBHOOK', ''); // url assoluto https per start.php
 define('LOG_FILE', './telegram.log');
-
+define('WAPI','');
 // Your Openstreetmap Query settings
 define('AROUND', 2000);						//Number of meters to calculate radius to search
 define('MAX', 3);							//max number of points to search

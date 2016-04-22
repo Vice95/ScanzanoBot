@@ -1,4 +1,4 @@
-#!/usr/bin/php5
+#!/usr/bin/php
 <?php
 //previsto da chiamare solo php start.php con 1 eventuale parametro che può essere
 	//hookset per settare il link di webhook
