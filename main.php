@@ -31,21 +31,25 @@ function start($telegram,$update){
 	$reply_to_msg=$update["message"]["reply_to_message"];
 	$nome =$update["message"]["from"]["first_name"];
 	$cognome =$update["message"]["from"]["last_name"];
-	$user =$update["message"]["from"]["username"];
-
-	$this->shell($telegram,$text,$chat_id,$user_id,$location,$reply_to_msg);
+	$user=$update["message"]["from"]["username"];
+	
+	$result = $telegram->getData();
+	$image = $result["message"] ["photo"];
+	
+	
+	$this->shell($telegram,$text,$chat_id,$user_id,$location,$reply_to_msg,$nome,$cognome,$user,$image);//,$image);
 	$db = NULL;
-
 }
 
 //gestisce l'interfaccia utente
-function shell($telegram,$text,$chat_id,$user_id,$location,$reply_to_msg){
+function shell($telegram,$text,$chat_id,$user_id,$location,$reply_to_msg,$nome,$cognome,$user,$image){
 	date_default_timezone_set('Europe/Rome');
 	$today = date("Y-m-d H:i:s");
 	$log="";
+	//echo "\\\\\\\\\\\\\\\\\\\\".
 	if ($text == "/start" || $text == "Informazioni") {
 		$this->send_img($telegram,$chat_id,'logo.png');
-		$reply = "Benvenuto su ScanzanoBot il bot del comune di Scanzano Jonico, creato da @ViCe95 e disponibile su http://github.com/vice95/ScanzanoBot.git";
+		$reply = "Benvenuto ".$nome." ".$cognome."su ScanzanoBot il bot del comune di Scanzano Jonico, creato da @ViCe95 e disponibile su http://github.com/vice95/ScanzanoBot.git";
 		$content = array('chat_id' => $chat_id, 'text' => $reply,'disable_web_page_preview'=>true);
 		$telegram->sendMessage($content);
 		$img = curl_file_create('mt2019.png','image/png');
@@ -53,17 +57,13 @@ function shell($telegram,$text,$chat_id,$user_id,$location,$reply_to_msg){
 		$telegram->sendPhoto($contentp);
 		$log=$today. ";new chat started;" .$chat_id. "\n";
 		if ($text=="/start"){
-			$handle = fopen("./users.txt", 'a');
-			fwrite($handle,$user_id."\n");
-			fclose($handle);
-			$log=$today. ";new user started;" .$user_id. ";  ".$nome."  ".$cognome."   ".$user."\n";
-			$log.=$today. ";new chat started;" .$chat_id. "\n";
+				$handle = fopen("./users.txt", 'a');
+				fwrite($handle,$user_id."\n");
+				fclose($handle);
+				$log=$today. ";new user started;" .$user_id. ";  ".$nome."  ".$cognome."   ".$user."\n";
+				$log.=$today. ";new chat started;" .$chat_id. "\n";
 			}
 		$this->create_keyboard_temp($telegram,$chat_id,"base");
-		
-		}
-	else if($location!=null){//gestione segnalazioni georiferite
-		$this->create_keyboard_temp($telegram,$chat_id,"gps",$location["latitude"],$location["longitude"]);
 		}
 	else if ($text == "Foto") {
 		$arrayfile=array();
@@ -71,12 +71,9 @@ function shell($telegram,$text,$chat_id,$user_id,$location,$reply_to_msg){
 		$num=rand(0,count($arrayfile)-1);
 		$this->send_img($telegram,$chat_id,'img/'.$arrayfile[$num]);
 		$log=$today. ";new foto sent to ;" .$user_id. "   ".$user. "  at ".$chat_id."\n";
-		
-		//$log=$today. ";new chat started;" .$chat_id. "\n";
 	}
 	else if ($text == "Meteo") {
 		$text="";
-		//$this->send_img($telegram,$chat_id,'materaevents.png');
 		//The script shows the latest temperature value from various selected personal Wunderground stations. Also, if desired, it shows today's forecast for the selected city. If you want to use Fahrenheit degrees, please change every occurrence of 'temp_c' to 'temp_f' in the code. Be careful to avoid excessive API calls: you have about 120 calls per day before breaking Wunderground Terms!
 		//Script by flapane.com - Latest rev. 30-Dec-14
 		$expiretime=30;     //cache expire time in minutes
@@ -190,9 +187,6 @@ function shell($telegram,$text,$chat_id,$user_id,$location,$reply_to_msg){
 	else if ($text == "Eventi") {
 		$this->create_keyboard_temp($telegram,$chat_id,"eventi");
 		$log=$today. ";eventi sent to ;" .$user_id."   ".$user. "  at ".$chat_id."\n";
-		//exit;
-		
-
 	}
 	else if ($text == "Luoghi") {
 		$this->create_keyboard_temp($telegram,$chat_id,"luoghi");		
@@ -293,7 +287,7 @@ foreach($chunks as $chunk) {
 		if ($today >= $from && $today <= $to) {
 				//echo "da: ".$from." a: ".$to." con oggi: ".$today."\n";
 				//$homepage .="da: ".$from." a: ".$to." con oggi: ".$today."\n";
-				$homepage .="\n";
+				$homepage .="____________\n";
 				$homepage .="<b>Nome: </b>".$csv[$i][1]."\n";
 				$homepage .="<b>Organizzato da: </b>".$csv[$i][3]."\n";
 				if($csv[$i][5] !=NULL)
@@ -309,38 +303,51 @@ foreach($chunks as $chunk) {
 				if($csv[$i][13] !=NULL) 
 					$homepage .="<b>Email: </b>".$csv[$i][6]."\n";
 				if($csv[$i][16] !=NULL)  
-				$homepage .="<b>Foto: </b>".$csv[$i][19]."\n";
+				//$homepage .="<b>Foto: </b>".$csv[$i][19]."\n";
 				$homepage .="____________\n";
-		}
+				//echo $csv[$i][18];
+				
+				grab_image($csv[$i][18],$chat_id.".jpg");
+				$img = curl_file_create("./".$chat_id.".jpg",'image/jpg'); 
+				$content = array('chat_id' => $chat_id, 'photo' => $img);
+				$telegram->sendPhoto($content);
+				
+				$content = array('chat_id' => $chat_id, 'text' => $homepage,'parse_mode'=>'HTML','disable_web_page_preview'=>true);
+				$telegram->sendMessage($content);
+
+				$content = array('chat_id' => $chat_id, 'latitude' =>$csv[$i][16],'longitude'=>$csv[$i][17]);//,'parse_mode'=>'HTML'
+				$telegram->sendLocation($content);
+				}
+				/*else{
+					$content = array('chat_id' => $chat_id, 'text' => "Nessun evento in programma per la giornata di oggi",'parse_mode'=>'HTML','disable_web_page_preview'=>true);
+					$telegram->sendMessage($content);
+				}*/
 }
 
 //}
-
-//	echo $alert;
-
-$chunks = str_split($homepage, self::MAX_LENGTH);
-foreach($chunks as $chunk) {
-	$content = array('chat_id' => $chat_id, 'text' => $chunk,'parse_mode'=>'HTML','disable_web_page_preview'=>true);
+if($homepage==""){
+	$content = array('chat_id' => $chat_id, 'text' => "Nessun evento in programma per la giornata di oggi",'parse_mode'=>'HTML','disable_web_page_preview'=>true);
 	$telegram->sendMessage($content);
+	}
+//	echo $alert;
+/*if($homepage!=NULL){
+	$chunks = str_split($homepage, self::MAX_LENGTH);
+	foreach($chunks as $chunk) {
+		$content = array('chat_id' => $chat_id, 'photo' => $img );
+		$telegram->sendPhoto($content);
+		$content = array('chat_id' => $chat_id, 'text' => $chunk,'parse_mode'=>'HTML','disable_web_page_preview'=>true);
+		$telegram->sendMessage($content);
+
+		$content = array('chat_id' => $chat_id, 'latitude' =>$gps[0],'longitude'=>$gps[1]);//,'parse_mode'=>'HTML'
+		$telegram->sendLocation($content);
+	}
 }
+*/
 	$this->create_keyboard_temp($telegram,$chat_id,"eventi");
 	$log=$today. ";eventi oggi sent to ;" .$user_id."   ".$user. "  at ".$chat_id."\n";
 
 //exit;
 }
-	else if ($text == "Farmacie") {
-		//location_manager($telegram,$user_id,$chat_id,$location);
-		/*$location="Sto cercando le Farmacie di Scanzano Jonico ";
-		$content = array('chat_id' => $chat_id, 'text' => $location,'disable_web_page_preview'=>true);
-		$telegram->sendMessage($content);
-		sleep (1);
-		$luogo='pharmacy';
-		$comune="Scanzano";
-		$this->cerca($telegram,$user_id,$chat_id,$comune,$luogo);*/
-		
-		exit;
-	}
-	
 	else if ($text == "Indietro") {
 		$this->create_keyboard_temp($telegram,$chat_id,"base");
 		$log=$today. ";Indietro sent to ;" .$user_id."   ".$user. "  at ".$chat_id."\n";
@@ -378,11 +385,24 @@ foreach($chunks as $chunk) {
 							Tutti i dati sono prelevati da Openstreetmap.Data in licenza ODbL.
 							© OpenStreetMap contributors
 							http://www.openstreetmap.org/copyright");
-							$this->cerca($telegram,$user_id,$chat_id,$comune,'museum');
 		$content = array('chat_id' => $chat_id, 'text' => $reply);
 		$telegram->sendMessage($content);
+		$this->cerca($telegram,$user_id,$chat_id,$comune,'place_of_worship','luoghi di culto');
 		$this->create_keyboard_temp($telegram,$chat_id,"luoghi");
 		$log=$today. ";Culto sent to ;" .$user_id."   ".$user. "  at ".$chat_id."\n";
+		//exit;
+	}
+	else if ($text== "Scuola"){
+		$reply = utf8_encode("Ciao! Questo comando ti indica le scuole attorno alla tua posizione.
+							Invia la tua posizione tramite apposita molletta che trovi in basso a sinistra nella chat.
+							Tutti i dati sono prelevati da Openstreetmap.Data in licenza ODbL.
+							© OpenStreetMap contributors
+							http://www.openstreetmap.org/copyright");
+		$content = array('chat_id' => $chat_id, 'text' => $reply);
+		$telegram->sendMessage($content);
+		$this->cerca($telegram,$user_id,$chat_id,$comune,'school','scuole');
+		$this->create_keyboard_temp($telegram,$chat_id,"luoghi");
+		$log=$today. ";Scuola sent to ;" .$user_id."   ".$user. "  at ".$chat_id."\n";
 		//exit;
 	}
 	else if ($text == "GeoRadar") {
@@ -401,11 +421,63 @@ foreach($chunks as $chunk) {
 		$telegram->sendMessage($content);
 		$log=$today. ";Georadar keyboard sent to ;" .$user_id."   ".$user. "  at ".$chat_id."\n";
 		}
+	else if ($text== "Segnala Disservizio"){
+		$reply = utf8_encode("Ciao! Questo comando ti consente di inviare una foto o un messaggio per denunciare un disservizio nella citta'");
+		$content = array('chat_id' => $chat_id, 'text' => $reply);
+		$telegram->sendMessage($content);
+		$reply = utf8_encode("Invia la tua posizione tramite apposita molletta che trovi in basso a sinistra nella chat.");
+		$content = array('chat_id' => $chat_id, 'text' => $reply,'reply_markup' => $telegram->buildForceReply(true));
+		$telegram->sendMessage($content);
+	}
+	else if($location!=NULL && $reply_to_msg["text"]=="Invia la tua posizione tramite apposita molletta che trovi in basso a sinistra nella chat."){
+		$reply = utf8_encode("Invia una foto o un messaggio per evidenziare il problema");
+		$content = array('chat_id' => $chat_id, 'text' => $reply,'reply_markup' => $telegram->buildForceReply(true));
+		$telegram->sendMessage($content);
+		file_put_contents($chat_id, $location['latitude'].",".$location['longitude'], FILE_APPEND | LOCK_EX);
+
+	}
+	else if($reply_to_msg["text"]=="Invia una foto o un messaggio per evidenziare il problema"){
+		$gps=explode(',',file_get_contents($chat_id));
+		if($text!=NULL){
+			file_put_contents(SEGNALAZIONE, $text."\n", FILE_APPEND | LOCK_EX);
+			$reply="Segnalazione inviata da ScanzanoBot:\n".$text;
+			$content = array('chat_id' => ID_SEGNALAZIONE, 'text' => $reply);//,'parse_mode'=>'HTML'
+			$telegram->sendMessage($content);
+			$content = array('chat_id' => ID_SEGNALAZIONE, 'latitude' =>$gps[0],'longitude'=>$gps[1]);//,'parse_mode'=>'HTML'
+			$telegram->sendLocation($content);
+			
+		}
+		else if($image!=NULL){
+			$file = $telegram->getFile($telegram-> getPhoto());
+			$res=json_decode($file,true);
+			$iname=date("Y-m-d H:i:s").".jpg";
+			$telegram->downloadFile($res["result"]["file_path"], "./segnalazioni/".$iname);
+			
+			$reply="Segnalazione inviata da ScanzanoBot:\n";
+			$content = array('chat_id' => ID_SEGNALAZIONE, 'text' => $reply);//,'parse_mode'=>'HTML'
+			$telegram->sendMessage($content);
+			
+			$img = curl_file_create("./segnalazioni/".$iname,'image/jpg'); 
+			$content = array('chat_id' => ID_SEGNALAZIONE, 'photo' => $img );
+			$telegram->sendPhoto($content);
+			
+			$content = array('chat_id' => ID_SEGNALAZIONE, 'latitude' =>$gps[0],'longitude'=>$gps[1]);//,'parse_mode'=>'HTML'
+			$telegram->sendLocation($content);
+
+		}
+		$reply = utf8_encode("La segnalazione e' stata presa in carico, grazie per la tua collaborazione !!");
+		$content = array('chat_id' => $chat_id, 'text' => $reply);
+		$telegram->sendMessage($content);
+		unlink($chat_id);
+		//$log=$today. ";Disservizio sent from ;" .$user_id."   ".$user. "  at ".$chat_id."\n";
+		$this->create_keyboard_temp($telegram,$chat_id,"base",0,0);
+		}
+	
 	if ($log==""){$log=$today. ";".$text." from to ;" .$user_id."   ".$user. "  at ".$chat_id."\n";}
 	file_put_contents(LOG_FILE, $log, FILE_APPEND | LOCK_EX);
 }
 //cerca P.O.I.
-function cerca($telegram,$user_id,$chat_id,$location,$luogo){
+function cerca($telegram,$user_id,$chat_id,$location,$luogo,$msg){
 		
 
 		date_default_timezone_set('Europe/Rome');
@@ -442,7 +514,7 @@ function cerca($telegram,$user_id,$chat_id,$location,$luogo){
 					//gestione musei senza il tag nome
 					if($nome=="")
 					{
-							$nome=utf8_encode("Museo non identificato su Openstreetmap");
+							$nome=utf8_encode($msg." non identificato su Openstreetmap");
 							$content = array('chat_id' => $chat_id, 'text' =>$nome);
 							$telegram->sendMessage($content);
 					}					
@@ -452,15 +524,16 @@ function cerca($telegram,$user_id,$chat_id,$location,$luogo){
 				
 				//crediti dei dati
 				if((bool)$osm_data_dec->node)
-				{
-					$content = array('chat_id' => $chat_id, 'text' => utf8_encode("Questi sono i musei vicini a te (dati forniti tramite OpenStreetMap. Licenza ODbL © OpenStreetMap contributors)"));
-					$bot_request_message=$telegram->sendMessage($content);				
+				{	$text="Questi sono le ".$msg." vicino a te (dati forniti tramite OpenStreetMap. Licenza ODbL© OpenStreetMap contributors)";
+					/*$content = array('chat_id' => $chat_id, 'text' => utf8_encode($text));
+					$bot_request_message=$telegram->sendMessage($content);				*/
 				}else
-				{
-					$content = array('chat_id' => $chat_id, 'text' => utf8_encode("Non ci sono sono musei vicini, mi spiace! Se ne conosci uno nelle vicinanze mappalo su www.openstreetmap.org"));
-					$bot_request_message=$telegram->sendMessage($content);	
+				{	$text="Non ci sono ".$msg." vicino, mi spiace! Se ne conosci uno nelle vicinanze mappalo su www.openstreetmap.org";
+					/*$content = array('chat_id' => $chat_id, 'text' => utf8_encode());
+					$bot_request_message=$telegram->sendMessage($content);	*/
 				}
-				
+				$content = array('chat_id' => $chat_id, 'text' => utf8_encode($text));
+				$bot_request_message=$telegram->sendMessage($content);
 		/*$chunks = str_split($data, self::MAX_LENGTH);
 		foreach($chunks as $chunk) {
 			$forcehide=$telegram->buildForceReply(true);
@@ -505,7 +578,7 @@ function create_keyboard_temp($telegram, $chat_id,$opt,$lat,$lon){
 				$msg="Scegli un'azienda:";
 			}
 	else if ($opt== 'eventi'){
-				$option=array(array("Oggi","Settimana"),array("Indietro"));
+				$option=array(array("Oggi"),array("Indietro"));
 				$msg="Scegli intervallo:";
 			}
 	else if ($opt== 'gps'){
@@ -570,5 +643,18 @@ function elencafiles($dirname){
 	return $arrayfiles;
 }
 }
-
+function grab_image($url,$saveto){
+    $ch = curl_init ($url);
+    curl_setopt($ch, CURLOPT_HEADER, 0);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_BINARYTRANSFER,1);
+    $raw=curl_exec($ch);
+    curl_close ($ch);
+    if(file_exists($saveto)){
+        unlink($saveto);
+    }
+    $fp = fopen($saveto,'x');
+    fwrite($fp, $raw);
+    fclose($fp);
+}
 ?>

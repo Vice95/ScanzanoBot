@@ -4,7 +4,7 @@
  * based on first version by @author Gabriele Grillo <gabry.grillo@alice.it>
  *
  */
-
+//error_reporting(E_ERROR | E_WARNING | E_PARSE);
 include('settings_t.php');
 
 
@@ -106,6 +106,7 @@ public $link = "";
     public function User_id(){
     	return $this->data["message"]["from"]["id"];
     }
+    
     public function Location() {
         return $this->data["message"]["location"];
     }
@@ -192,6 +193,51 @@ public $link = "";
         $encodedMarkup = json_encode($replyMarkup, true);
         return $encodedMarkup;
     }
+
+/// Use this method to get basic info about a file and prepare it for downloading
+    /**
+     *  Use this method to get basic info about a file and prepare it for downloading. For the moment, bots can download files of up to 20MB in size. On success, a File object is returned. The file can then be downloaded via the link https://api.telegram.org/file/bot<token>/<file_path>, where <file_path> is taken from the response. It is guaranteed that the link will be valid for at least 1 hour. When the link expires, a new one can be requested by calling getFile again.
+     * \param $file_id String File identifier to get info about
+     * \return the JSON Telegram's reply
+     */
+    public function getFile($file_id) {
+        $content = array('file_id' => $file_id);
+        return $this->endpoint("getFile", $content);
+    }
+
+    /// Use this method to download a file
+    /**
+     *  Use this method to to download a file from the Telegram servers.
+     * \param $telegram_file_path String File path on Telegram servers
+     * \param $local_file_path String File path where save the file
+     */
+    public function downloadFile($telegram_file_path, $local_file_path) {
+        $file_url = "https://api.telegram.org/file/bot" . $this->bot_id . "/" . $telegram_file_path;
+        $in = fopen($file_url, "rb");
+        $out = fopen($local_file_path, "wb");
+
+        while ($chunk = fread($in, 8192)) {
+            fwrite($out, $chunk, 8192);
+        }
+        fclose($in);
+        fclose($out);
+    }
+
+
+public function getPhoto() {
+    /*
+$AllPhotoSize = array(
+        'Photo_XS' => $this->data["message"]["photo"][0]["file_id"],
+        'Photo_S' =>   $this->data["message"]["photo"][1]["file_id"],
+        'Photo_M' =>  $this->data["message"]["photo"][2]["file_id"],
+        'Photo_L' =>  $this->data["message"]["photo"][3]["file_id"]
+    );          
+    return ...$AllPhotoSize
+*/
+    return $this->data["message"]["photo"][2]["file_id"];
+}
+
+
 
     public function getUpdates($offset = 0, $limit = 100, $timeout = 0, $update = true) {
         $content = array('offset' => $offset, 'limit' => $limit, 'timeout' => $timeout);

@@ -1,4 +1,3 @@
-#!/usr/bin/php
 
 <?php
 /**
@@ -14,7 +13,6 @@ function getUpdates($telegram){
 
 	date_default_timezone_set('Europe/Rome');
 	$today = date("Y-m-d H:i:s");
-	
 	$update_manager= new mainloop();
 
 	// Get all the new updates and set the new correct update_id
@@ -28,7 +26,12 @@ function getUpdates($telegram){
 		$user_id= $telegram->User_id();
 		$location= $telegram->Location();
 		$reply_to_msg= $telegram->ReplyToMessage();
-		$update_manager->shell($telegram,$text,$chat_id,$user_id,$location,$reply_to_msg);
+		$nome=$telegram->FirstName();
+		$cognome=$telegram->LastName();
+		$user=$telegram->Username();
+		$result = $telegram->getData();
+		$image = $result["message"]["photo"];
+		$update_manager->shell($telegram,$text,$chat_id,$user_id,$location,$reply_to_msg,$nome,$cognome,$user,$image);//,$image);
 	}
 
 }
