@@ -4,10 +4,10 @@
 
 //include('settings_t.php');
 
-function give_osm_data($lat,$lon,$tag)
+function give_osm_data($lat,$lon,$tag,$around)
 {
 	$tag='"amenity"="'.$tag.'"';
-	$around =AROUND; 				//Number of meters to calculate radius to search
+	//$around =AROUND; 				//Number of meters to calculate radius to search
 	$max=MAX;						//max number of points to search
 	//$tag=TAG; 						//tag to search accoring to Overpass_API Query Language
 
