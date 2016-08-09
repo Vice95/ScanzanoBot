@@ -3,7 +3,7 @@
 include('getUpdates.php');
 
 
-//istanzia oggetto Telegram
+//istanzia oggetto Telegram v
 	$bot_id = TELEGRAM_BOT;
 	$bot = new Telegram($bot_id);
 
@@ -93,6 +93,7 @@ function eventi ($telegram,$chat_id,$giorno,$name){
 					$img = curl_file_create("./".$chat_id.".jpg",'image/jpg'); 
 					$content = array('chat_id' => $chat_id, 'photo' => $img);
 					$telegram->sendPhoto($content);
+					unlink("./".$chat_id.".jpg");
 				}
 				
 				$content = array('chat_id' => $chat_id, 'text' => $homepage,'parse_mode'=>'HTML','disable_web_page_preview'=>true);
