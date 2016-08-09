@@ -64,9 +64,22 @@ function shell($telegram,$text,$chat_id,$user_id,$location,$reply_to_msg,$nome,$
 		$telegram->sendPhoto($contentp);
 		$log=$today. ";info to;" .$chat_id. "\n";
 		if ($text=="/start"){
+			$row=1;
+			$trovato=0;
+			if (($handler = fopen(USER_DB, "r")) !== FALSE) {
+				while (($data = fgetcsv($handler, 1000, ";")) !== FALSE) {
+				$num = count($data);
+				$row++;
+				if($data[0]==$user_id)
+					$trovato=1;
+				}
+			fclose($handle);
+			}
+			if($trovato==0){
 				$handle = fopen(USER_DB, 'a');
 				fwrite($handle,$user_id.";".$nome.";@".$user.";".date("H:i:s d/m/Y"). "\n");
 				fclose($handle);
+			}
 				$log=$today. ";new user started;@" .$user_id. ";  ".$nome."  ".$cognome."   ".$user."\n";
 				$log.=$today. ";new chat started;" .$chat_id. "\n";
 			}
@@ -628,7 +641,7 @@ function eventi ($telegram,$user_id,$chat_id,$giorno){
 		$inizio=1;
 		$homepage ="";
 		$csv = array_map('str_getcsv',file($urlgd));
-var_dump($csv[8]);
+//var_dump($csv[8]);
 		$count = 0;
 		foreach($csv as $data=>$csv1){
 				$count = $count+1;
@@ -690,6 +703,7 @@ var_dump($csv[8]);
 					$img = curl_file_create("./".$chat_id.".jpg",'image/jpg'); 
 					$content = array('chat_id' => $chat_id, 'photo' => $img);
 					$telegram->sendPhoto($content);
+					unlink("./".$chat_id.".jpg");
 				}
 				
 				$content = array('chat_id' => $chat_id, 'text' => $homepage,'parse_mode'=>'HTML','disable_web_page_preview'=>true);
