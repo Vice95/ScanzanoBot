@@ -711,6 +711,9 @@ function eventi ($telegram,$user_id,$chat_id,$giorno){
 
 				$content = array('chat_id' => $chat_id, 'latitude' =>$csv[$i][16],'longitude'=>$csv[$i][17]);//,'parse_mode'=>'HTML'
 				$telegram->sendLocation($content);
+				$line="**************************************";
+				$content = array('chat_id' => $chat_id, 'text' => $line,'disable_web_page_preview'=>true);
+                                $telegram->sendMessage($content);
 				}
 				/*else{
 					$content = array('chat_id' => $chat_id, 'text' => "Nessun evento in programma per la giornata di oggi",'parse_mode'=>'HTML','disable_web_page_preview'=>true);

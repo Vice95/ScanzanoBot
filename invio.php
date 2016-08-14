@@ -101,6 +101,10 @@ function eventi ($telegram,$chat_id,$giorno,$name){
 
 				$content = array('chat_id' => $chat_id, 'latitude' =>$csv[$i][16],'longitude'=>$csv[$i][17]);//,'parse_mode'=>'HTML'
 				$telegram->sendLocation($content);
+				$line="**************************************";
+                                $content = array('chat_id' => $chat_id, 'text' => $line,'disable_web_page_preview'=>true);
+                                $telegram->sendMessage($content);
+
 				}
 				
 	
