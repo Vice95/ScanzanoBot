@@ -61,7 +61,7 @@ function eventi ($telegram,$chat_id,$giorno,$name){
 		if ($today >= $from && $today <= $to) {
 				
 				//$homepage .="da: ".$from." a: ".$to." con oggi: ".$today."\n";
-				$homepage .="------------------------------------------- \n";
+				$homepage ="------------------------------------------- \n";
 				$homepage .="<b>Nome: </b>".$csv[$i][1]."\n";
 				$homepage .="<b>Organizzato da: </b>".$csv[$i][3]."\n";
 				if($csv[$i][9] !=NULL)
