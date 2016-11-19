@@ -1,11 +1,20 @@
 <?php
+# @Author: Vincenzo Cerbino
+# @Date:   2016-11-12T21:27:02+01:00
+# @Email:  vicemail95@gmail.com
+# @Last modified by:   Vincenzo Cerbino
+# @Last modified time: 2016-11-19T10:20:23+01:00
+# @License: MIT License
+
+
+
 /**
 * Telegram Bot ScanzanoBot
 * @author Vincenzo Cerbino @ViCe95
 */
 include("Telegram.php");
 include("QueryLocation.php");
-
+require_once 'src/Feed.php';
 class mainloop{
 const MAX_LENGTH = 4096;
 public $log=LOG_FILE;
@@ -31,11 +40,11 @@ function start($telegram,$update){
 	$nome =$update["message"]["from"]["first_name"];
 	$cognome =$update["message"]["from"]["last_name"];
 	$user=$update["message"]["from"]["username"];
-	
+
 	$result = $telegram->getData();
 	$image = $result["message"] ["photo"];
-	
-	
+
+
 	$this->shell($telegram,$text,$chat_id,$user_id,$location,$reply_to_msg,$nome,$cognome,$user,$image);//,$image);
 	$db = NULL;
 }
@@ -113,10 +122,10 @@ function shell($telegram,$text,$chat_id,$user_id,$location,$reply_to_msg,$nome,$
 		$this->eventi ($telegram,$user_id,$chat_id,"domani");
 		$log=$today. ";eventi domani sent to ;" .$user_id."   ".$user. "  at ".$chat_id."\n";
 }
-	
+
 	/*************************Trasporti*******************************/
 	else if ($text == "Trasporti") {
-		$this->create_keyboard_temp($telegram,$chat_id,"trasporti");		
+		$this->create_keyboard_temp($telegram,$chat_id,"trasporti");
 		$log=$today. ";Trasporti sent to ;" .$user_id."   ".$user. "  at ".$chat_id."\n";
 		//exit;
 	}
@@ -149,7 +158,7 @@ function shell($telegram,$text,$chat_id,$user_id,$location,$reply_to_msg,$nome,$
 		}
 	/*************************POI*******************************/
 	else if ($text == "Luoghi") {
-		$this->create_keyboard_temp($telegram,$chat_id,"luoghi");		
+		$this->create_keyboard_temp($telegram,$chat_id,"luoghi");
 		$log=$today. ";luoghi sent to ;" .$user_id."   ".$user. "  at ".$chat_id."\n";
 	}
 	else if ($text== "Culto"){
@@ -255,22 +264,22 @@ function shell($telegram,$text,$chat_id,$user_id,$location,$reply_to_msg,$nome,$
 			$telegram->sendMessage($content);
 			$content = array('chat_id' => ID_SEGNALAZIONE, 'latitude' =>$gps[0],'longitude'=>$gps[1]);//,'parse_mode'=>'HTML'
 			$telegram->sendLocation($content);
-			
+
 		}
 		else if($image!=NULL){
 			$file = $telegram->getFile($telegram-> getPhoto());
 			$res=json_decode($file,true);
 			$iname=date("Y-m-d H:i:s").".jpg";
 			$telegram->downloadFile($res["result"]["file_path"], "./segnalazioni/".$iname);
-			
+
 			$reply="Segnalazione inviata da ScanzanoBot:\n";
 			$content = array('chat_id' => ID_SEGNALAZIONE, 'text' => $reply);//,'parse_mode'=>'HTML'
 			$telegram->sendMessage($content);
-			
-			$img = curl_file_create("./segnalazioni/".$iname,'image/jpg'); 
+
+			$img = curl_file_create("./segnalazioni/".$iname,'image/jpg');
 			$content = array('chat_id' => ID_SEGNALAZIONE, 'photo' => $img );
 			$telegram->sendPhoto($content);
-			
+
 			$content = array('chat_id' => ID_SEGNALAZIONE, 'latitude' =>$gps[0],'longitude'=>$gps[1]);//,'parse_mode'=>'HTML'
 			$telegram->sendLocation($content);
 
@@ -289,60 +298,94 @@ function shell($telegram,$text,$chat_id,$user_id,$location,$reply_to_msg,$nome,$
 	}
 	else if ($text == "Il Metapontino"){
 		$url="ilmetapontino.it";
-		$this->testata($telegram,$user_id,$chat_id,$url);
+		$feed="http://www.ilmetapontino.it/index.php/component/k2/itemlist/category/22-cronaca?format=feed";
+		$type="rss";
+		$this->testata($telegram,$user_id,$chat_id,$url,$feed,$type);
 		$log=$today. ";$text sent to ;" .$user_id."   ".$user. "  at ".$chat_id."\n";
 	}
 	else if ($text == "JonicaTv"){
 		$url="jonica.tv";
-		$this->testata($telegram,$user_id,$chat_id,$url);
+		$feed="https://jonicanotizie.wordpress.com/feed/";
+		$type="rss";
+		$this->testata($telegram,$user_id,$chat_id,$url,$feed,$type);
 		$log=$today. ";$text sent to ;" .$user_id."   ".$user. "  at ".$chat_id."\n";
 	}
 	else if ($text == "Filippo Mele"){
 		$url="filippomele.blogspot.com";
-		$this->testata($telegram,$user_id,$chat_id,$url);
+		$feed="http://filippomele.blogspot.com/feeds/posts/default";
+		$type="atom";
+		$this->testata($telegram,$user_id,$chat_id,$url,$feed,$type);
 		$log=$today. ";$text sent to ;" .$user_id."   ".$user. "  at ".$chat_id."\n";
 	}
 	else if ($text == "Amministrative"){
 		$url="http://www.comune.scanzanojonico.mt.it/index.php";
-		$this->testata($telegram,$user_id,$chat_id,$url);
+		$feed="http://www.comune.scanzanojonico.mt.it/po/elenco_news_rss.php?tags=&area=H&x=";
+		$type="rss";
+		$this->testata($telegram,$user_id,$chat_id,$url,$feed,$type);
 		$log=$today. ";$text sent to ;" .$user_id."   ".$user. "  at ".$chat_id."\n";
 	}
+	else if ($text == "Parrocchia"){
+		$url="http://www.parrocchiamariassannunziata.it";
+		$feed="http://www.parrocchiamariassannunziata.it/index.php/feed/";
+		$type="rss";
+		$this->testata($telegram,$user_id,$chat_id,$url,$feed,$type);
+		$log=$today. ";$text sent to ;" .$user_id."   ".$user. "  at ".$chat_id."\n";
+	}
+	/*************************Soldi Pubblici*******************************/
+	else if ($text == "Soldi Pubblici") {
+		$this->create_keyboard_temp($telegram,$chat_id,"soldi");
+		$log=$today. ";soldi Pubblici sent to ;" .$user_id."   ".$user. "  at ".$chat_id."\n";
+	}
+	else if($this->startsWith($text,"🔍")){
+		$text=explode("🔍", $text);
+		$categoria=trim(rtrim($text[1]));
+		//$comune=$this->location_manager($telegram,$user_id,$chat_id,$location,$lat,$lon);
+		$msg="🔍 Sto cercando le spese nella categoria |$categoria|";
+		$content = array('chat_id' => $chat_id, 'text' => $msg,'disable_web_page_preview'=>true);
+		$telegram->sendMessage($content);
+		$msg=$this->soldi_pubblici(ENTE,$categoria);
+		$content = array('chat_id' => $chat_id, 'text' => $msg,'parse_mode'=>'HTML','disable_web_page_preview'=>true);
+		$telegram->sendMessage($content);
+		$log=$today. ";Spese $text keyboard sent to ;" .$user_id."   ".$user. "  at ".$chat_id."\n";
+		}
+
 	/*************************Utils*******************************/
 	else if ($text == "Indietro") {
 		$this->create_keyboard_temp($telegram,$chat_id,"base");
 		$log=$today. ";Indietro sent to ;" .$user_id."   ".$user. "  at ".$chat_id."\n";
 	}
-	
+
 	if ($log==""){$log=$today. ";".$text." from to ;" .$user_id."   ".$user. "  at ".$chat_id."\n";}
 	file_put_contents(LOG_FILE, $log, FILE_APPEND | LOCK_EX);
+	 $this->postData($today,$text,$user_id,$user,$chat_id,$log,"ok");
 }
 //cerca P.O.I.
 function cerca($telegram,$user_id,$chat_id,$location,$luogo,$msg,$around,$lat,$lon){
-		
+
 
 		date_default_timezone_set('Europe/Rome');
 				$today = date("Y-m-d H:i:s");
-		
+
 				/*$lon=$location["longitude"];
 				$lat=$location["latitude"];
 				$lat=$location["latitude"];*/
-				
+
 				//for debug Prato coordinates
 				//$lon=11.0952;
 				//$lat=43.8807;
-				
+
 				/*$lon=16.700422;
 				$lat=40.250509;*/
-				
-			
+
+
 				//prelevo dati da OSM sulla base della mia posizione
 				$osm_data=give_osm_data($lat,$lon,$luogo,$around);
-				
+
 				//rispondo inviando i dati di Openstreetmap
 				$osm_data_dec = simplexml_load_string($osm_data);
 				//per ogni nodo prelevo coordinate e nome
 				foreach ($osm_data_dec->node as $osm_element) {
-					$nome="";					
+					$nome="";
 					foreach ($osm_element->tag as $key) {
 						if ($key['k']=='name')
 						{
@@ -357,11 +400,11 @@ function cerca($telegram,$user_id,$chat_id,$location,$luogo,$msg,$around,$lat,$l
 							/*$nome=utf8_encode($msg." non identificato su Openstreetmap");
 							$content = array('chat_id' => $chat_id, 'text' =>$nome);
 							$telegram->sendMessage($content);*/
-					}					
+					}
 					$content_geo = array('chat_id' => $chat_id, 'latitude' =>$osm_element['lat'], 'longitude' =>$osm_element['lon']);
 					$telegram->sendLocation($content_geo);
-				 } 
-				
+				 }
+
 				//crediti dei dati
 				if((bool)$osm_data_dec->node)
 				{	$text=$msg." vicino a te (dati forniti tramite OpenStreetMap. Licenza ODbL© OpenStreetMap contributors)";
@@ -406,7 +449,7 @@ function create_keyboard($telegram, $chat_id){
 
 function create_keyboard_temp($telegram, $chat_id,$opt,$lat,$lon){
 	if ($opt=='base'){
-				$option=array(array("Meteo","News Locali","Eventi"),array("Numeri Utili","Luoghi","Trasporti"),array("Segnala Disservizio","Foto","GeoRadar"),array("Informazioni"));
+				$option=array(array("Meteo","News Locali","Eventi"),array("Numeri Utili","Luoghi","Trasporti"),array("Segnala Disservizio","Foto","GeoRadar"),array("Soldi Pubblici"),array("Informazioni"));
 				$msg="Scegli una Funzione:";
 			}
 	else if ($opt== 'luoghi'){
@@ -430,6 +473,10 @@ function create_keyboard_temp($telegram, $chat_id,$opt,$lat,$lon){
 				$option=array(array("Amministrative"),array("Il Metapontino"),array("JonicaTv"),array("Filippo Mele"),array("Indietro"));
 				$msg="Scegli una Testata:";
 			}
+	else if ($opt=='soldi'){
+				$option=array(array("🔍 Cancelleria"),array("🔍 Rifiuti"),array("🔍 Energia Elettrica"),array("🔍 Mense Scolastiche"),array("🔍 Manifestazioni"),array("🔍 Combustibile"),array("🔍 Dipendenti"),array("Indietro"));
+				$msg="Scegli una categoria:";
+			}
 	$keyb = $telegram->buildKeyBoard($option, $onetime=false);
 	$content = array('chat_id' => $chat_id, 'reply_markup' => $keyb, 'text' =>$msg);
 	$telegram->sendMessage($content);
@@ -447,8 +494,8 @@ function location_manager($telegram,$user_id,$chat_id,$location,$lat,$lon){
 			/*$lon=$location["longitude"];
 			$lat=$location["latitude"];*/
 			$alert="";
-			$lat=trim($lat, " ");   
-			$lon=trim($lon, " "); 
+			$lat=trim($lat, " ");
+			$lon=trim($lon, " ");
 			$alert="";
 			$reply="http://nominatim.openstreetmap.org/reverse?format=json&lat=".$lat."&lon=".$lon."&zoom=18&addressdetails=1";
 			$json_string = file_get_contents($reply);
@@ -476,7 +523,7 @@ function elencafiles($dirname){
 	$arrayfiles=Array();
 	if(file_exists($dirname)){
 		$handle = opendir($dirname);
-		while (false !== ($file = readdir($handle))) { 
+		while (false !== ($file = readdir($handle))) {
 			if(is_file($dirname.$file)){
 				array_push($arrayfiles,$file);
 			}
@@ -510,17 +557,17 @@ function meteo($telegram,$user_id,$chat_id){
 		// Is the file older than $expiretime, or is the file new/empty?
 		$FileAge = time() - filemtime($cachename);    // Calculate file age in seconds
 		if ($FileAge > ($expiretime * 60) || 0 == filesize($cachename)){
-			$handle = fopen($cachename, 'wb');    // Now refresh the cachefile with newer content    
+			$handle = fopen($cachename, 'wb');    // Now refresh the cachefile with newer content
 				for($i=0; $i<$number_stations; $i++){
 					$parsed_json[$i] = json_decode(file_get_contents("http://api.wunderground.com/api/{$apikey}/conditions/q/pws:{$station[$i]}.json"));
-					
+
 					$pws_freshness = (($parsed_json[$i]->{'current_observation'}->{'local_epoch'})-($parsed_json[$i]->{'current_observation'}->{'observation_epoch'})); //elapsed time since PWS sent updated data
 					$pws_freshness_human_time = round($pws_freshness/3600, 0)." hour(s)";
-					if (preg_replace("/[^0-9,.]/", "", $pws_freshness_human_time) > 24) 
+					if (preg_replace("/[^0-9,.]/", "", $pws_freshness_human_time) > 24)
 						{
 						$pws_freshness_human_time = round($pws_freshness/86400, 1)." day(s)";
 						}
-						
+
 					if ($pws_freshness < 3600) //the PWS has been sending fresh data in the last hour
 						{
 						$temp_c[$i] = $parsed_json[$i]->{'current_observation'}->{'temp_c'}."\n";    //add a new line \n (a capo) to every value
@@ -539,11 +586,11 @@ function meteo($telegram,$user_id,$chat_id){
 					fwrite($handle,$hum[$i]);    //write hums
 					fwrite($handle,$wind_dir[$i]);    //write wind_dir
 					fwrite($handle,$wind_kph[$i]);		//write wind kph
-					fwrite($handle,$pressure_mb[$i]);	//write pressure   
-					fwrite($handle,$precip_today_in[$i]);	//write prec 
+					fwrite($handle,$pressure_mb[$i]);	//write pressure
+					fwrite($handle,$precip_today_in[$i]);	//write prec
 					fwrite($handle,$location_wunder[$i]);    //write locations
 				}
-				
+
 				if(!empty ($forecastcity)){    //do you want to show the forecast for today?
 					$parsed_json_forecast = json_decode(file_get_contents("http://api.wunderground.com/api/{$apikey}/forecast/lang:{$forecastlang}/q/{$forecastcity}.json"));
 					for($j=0; $j<2; $j++) {
@@ -568,26 +615,26 @@ function meteo($telegram,$user_id,$chat_id){
 			$secondsleft = "";
 			$ago = "";
 		}
-    
+
 		// Display most recent temperatures and their average value
 		$display = file($cachename, FILE_IGNORE_NEW_LINES); //ignore \n for non-reporting stations
 		foreach ($display as $key=>$value){
-			if($key % 7 == 0){  
+			if($key % 7 == 0){
 				$temperature[] = $value; // EVEN (righe del file cache pari)
 			}
-			else if($key % 7 == 1){  
+			else if($key % 7 == 1){
 				$hum[] = $value; // EVEN (righe del file cache pari)
 			}
-			else if($key % 7 == 2){  
+			else if($key % 7 == 2){
 				$wind_dir[] = $value; // EVEN (righe del file cache pari)
 			}
-			else if($key % 7 == 3){  
+			else if($key % 7 == 3){
 				$wind_kph[] = $value; // EVEN (righe del file cache pari)
 			}
-			else if($key % 7 == 4){  
+			else if($key % 7 == 4){
 				$pressure_mb[] = $value; // EVEN (righe del file cache pari)
 			}
-			else if($key % 7 == 5){  
+			else if($key % 7 == 5){
 				$precip_today_in[] = $value; // EVEN (righe del file cache pari)
 			}
 			else if($key % 7 == 6){
@@ -598,21 +645,21 @@ function meteo($telegram,$user_id,$chat_id){
 		for($i=0; $i<$number_stations; $i++){
 			$temperature_stripped[$i] = preg_replace("/[^0-9,.-]/", "", $temperature[$i]);
 			$hum_stripped[$i] = preg_replace("/[^0-9,.-]/", "", $hum[$i]);
-		}    
+		}
 
 		$temp_avg = (array_sum($temperature_stripped)/$number_stations); //average temperature
 		for($i=0; $i<$number_stations; $i++){
 			if($temperature[$i] == null){ //if weather station is not reporting data
 				$temperature[$i] = "N/A";
 				$temp_avg = "N/A";
-			}    
+			}
 		$text.="<b>(".rtrim($location_wunder[$i]).") </b>\n
-				<b>Temperatura: </b>".rtrim($temperature[$i])."°C 
+				<b>Temperatura: </b>".rtrim($temperature[$i])."°C
 				<b>Umidita': </b>".rtrim($hum[$i])."
 				<b>Direzione vento: </b>".rtrim($wind_dir[$i])."
 				<b>Velocita' vento: </b>".rtrim($wind_kph[$i])."km/h
 				<b>Pressione:		</b>".rtrim($pressure_mb[$i])."hPa
-				<b>Precipitazioni:	</b>".rtrim($precip_today_in[$i])."mm\n\n\n";    
+				<b>Precipitazioni:	</b>".rtrim($precip_today_in[$i])."mm\n\n\n";
 		}
 		$text.= "Media ".$temp_avg."°C | aggiornato $minutes $secondsleft $ago \n";
 
@@ -624,14 +671,14 @@ function meteo($telegram,$user_id,$chat_id){
 		$text.="\n<b>Previsioni per oggi:</b>\n<b>$dati[0]:</b> $dati[1]\n\n";
 		$text.="<b>$dati1[0]:</b> $dati1[1]\n\n";
 }
-		
+
 		$content = array('chat_id' => $chat_id, 'text' => $text,'parse_mode'=>'HTML','disable_web_page_preview'=>true);
 		$telegram->sendMessage($content);
-		
+
 		//exit;
 	}
 function eventi ($telegram,$user_id,$chat_id,$giorno){
-	
+
 	$location="Sto cercando gli eventi di Scanzano Jonico validi nella giornata di ".$giorno;
 		$content = array('chat_id' => $chat_id, 'text' => $location,'disable_web_page_preview'=>true);
 		$telegram->sendMessage($content);
@@ -669,7 +716,7 @@ function eventi ($telegram,$user_id,$chat_id,$giorno){
 
 //echo "da: ".$from." a: ".$to." con oggi: ".$today."\n";
 		if ($today >= $from && $today <= $to) {
-				
+
 				//$homepage .="da: ".$from." a: ".$to." con oggi: ".$today."\n";
 				$homepage ="____________\n";
 				$homepage .="<b>Nome: </b>".$csv[$i][1]."\n";
@@ -677,7 +724,7 @@ function eventi ($telegram,$user_id,$chat_id,$giorno){
 				if($csv[$i][9] !=NULL)
 					$homepage .="<b>Pagamento: </b>".$csv[$i][9]."\n";
 				$homepage .="<b>Tipologia: </b>".$csv[$i][4]."\n";
-				if($csv[$i][2] !=NULL)  
+				if($csv[$i][2] !=NULL)
 					$homepage .="<b>Descrizione: </b>".$this->decode_entities($csv[$i][2])."\n";
 				$homepage .="<b>Data: </b>".$csv[$i][11]."\n";
 				$homepage .="<b>Ora: </b>".$csv[$i][10]."\n";
@@ -690,22 +737,22 @@ function eventi ($telegram,$user_id,$chat_id,$giorno){
 				if($csv[$i][8] !=NULL)
 					 $homepage .="<b>Link evento: </b>".$csv[$i][8]."\n";
 
-				if($csv[$i][7] !=NULL) 
+				if($csv[$i][7] !=NULL)
 					$homepage .="<b>Web: </b>".$csv[$i][7]."\n";
-				if($csv[$i][6] !=NULL) 
+				if($csv[$i][6] !=NULL)
 					$homepage .="<b>Email: </b>".$csv[$i][6]."\n";
-				if($csv[$i][16] !=NULL)  
+				if($csv[$i][16] !=NULL)
 				//$homepage .="<b>Foto: </b>".$csv[$i][19]."\n";
 				$homepage .="____________\n";
 				//echo $csv[$i][18];
 				if($csv[$i][18]!=NULL){
 					$this->grab_image($csv[$i][18],$chat_id.".jpg");
-					$img = curl_file_create("./".$chat_id.".jpg",'image/jpg'); 
+					$img = curl_file_create("./".$chat_id.".jpg",'image/jpg');
 					$content = array('chat_id' => $chat_id, 'photo' => $img);
 					$telegram->sendPhoto($content);
 					unlink("./".$chat_id.".jpg");
 				}
-				
+
 				$content = array('chat_id' => $chat_id, 'text' => $homepage,'parse_mode'=>'HTML','disable_web_page_preview'=>true);
 				$telegram->sendMessage($content);
 
@@ -719,7 +766,7 @@ function eventi ($telegram,$user_id,$chat_id,$giorno){
 					$content = array('chat_id' => $chat_id, 'text' => "Nessun evento in programma per la giornata di oggi",'parse_mode'=>'HTML','disable_web_page_preview'=>true);
 					$telegram->sendMessage($content);
 				}*/
-	
+
 	}
 	if($homepage==""){
 	$content = array('chat_id' => $chat_id, 'text' => "Nessun evento in programma per la giornata di ".$giorno,'parse_mode'=>'HTML','disable_web_page_preview'=>true);
@@ -740,7 +787,7 @@ function eventi ($telegram,$user_id,$chat_id,$giorno){
 }
 */
 	$this->create_keyboard_temp($telegram,$chat_id,"eventi");
-	
+
 //exit;
 
 }
@@ -764,8 +811,8 @@ function numeri($telegram,$user_id,$chat_id){
 				$content = array('chat_id' => $chat_id, 'text' => $location,'disable_web_page_preview'=>true);
 				$telegram->sendMessage($content);
 		}
-		
-		
+
+
 
 	for ($i=$inizio;$i<$count;$i++){
 				$homepage .="\n";
@@ -774,12 +821,12 @@ function numeri($telegram,$user_id,$chat_id){
 				$homepage .="<b>Indirizzo: </b>".$csv[$i][6]."\n";
 				if($csv[$i][2] !=NULL)
 					$homepage .="<b>Tipologia: </b>".$csv[$i][2]."\n";
-				if($csv[$i][4] !=NULL)  
+				if($csv[$i][4] !=NULL)
 					$homepage .="<b>Sito web: </b>".$csv[$i][4]."\n";
-				if($csv[$i][5] !=NULL)  
+				if($csv[$i][5] !=NULL)
 					$homepage .="<b>E-mail: </b>".$csv[$i][5]."\n";
 				$homepage .="____________\n";
-		
+
 }
 
 //}
@@ -813,8 +860,8 @@ function corsemare($telegram,$user_id,$chat_id){
 				$content = array('chat_id' => $chat_id, 'text' => $location,'disable_web_page_preview'=>true);
 				$telegram->sendMessage($content);
 		}
-		
-		
+
+
 
 	for ($i=$inizio;$i<$count;$i++){
 				$homepage ="===========================\n";
@@ -830,7 +877,7 @@ function corsemare($telegram,$user_id,$chat_id){
 					$content = array('chat_id' => $chat_id, 'latitude' =>$csv[$i][4+4*$j],'longitude'=>$csv[$i][5+4*$j]);//,'parse_mode'=>'HTML'
 					$telegram->sendLocation($content);
 					}
-				
+
 }
 
 //}
@@ -844,9 +891,109 @@ foreach($chunks as $chunk) {
 }*/
 	//$this->create_keyboard_temp($telegram,$chat_id,"base");
 	}
-function testata($telegram,$user_id,$chat_id,$url){
-	$content = array('chat_id' => $chat_id, 'text' => $url,'disable_web_page_preview'=>false);
+function load_rss($telegram,$user_id,$chat_id,$url){
+	$rss = Feed::loadRss($url);
+	$news="Ultime Notizie ".$url."\n";
+	$news.= htmlSpecialChars($rss->title)."\n" ;
+	$news.= htmlSpecialChars($rss->description)."\n";
+
+	foreach ($rss->item as $item):
+	  $news.="=============================================================\n";
+		$news.="<b>".htmlSpecialChars($item->title)."</b>\n";
+		$news.="<i>".date("j.n.Y H:i", (int) $item->timestamp)."</i>\n";
+		$news.="".htmlspecialchars_decode($item->link)."\n";
+	endforeach;
+		$content = array('chat_id' => $chat_id, 'text' => $news,'disable_web_page_preview'=>true);
+		$telegram->sendMessage($content);
+}
+function testata($telegram,$user_id,$chat_id,$url,$feed,$type){
+	if($type=="atom"){
+		load_atom($telegram,$user_id,$chat_id,$feed);
+	}
+	elseif($type=="rss"){
+		load_rss($telegram,$user_id,$chat_id,$feed);
+	}
+	$content = array('chat_id' => $chat_id, 'text' => "Altre news su: ".$url,'disable_web_page_preview'=>false);
 	$telegram->sendMessage($content);
+}
+function soldi_pubblici($ente,$categoria){
+	//extract data from the post
+	extract($_POST);
+	//set POST variables
+	$url = 'http://soldipubblici.gov.it/it/ricerca';
+	//open connection
+	$ch = curl_init();
+	//$file = fopen('spese.json', 'w+'); //da decommentare se si vuole il file locale
+	header("Pragma: public");
+	header("Expires: 0");
+	header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+	header("Content-Type: application/force-download");
+	header("Content-Type: application/octet-stream");
+	header("Content-Type: application/download");
+	//this line is important its makes the file name
+	header("Content-Disposition: attachment;filename=spese.json");
+	header("Content-Transfer-Encoding: binary ");
+	//set the url, number of POST vars, POST data
+	curl_setopt($ch,CURLOPT_URL, $url);
+	curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+	curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www-form-urlencoded; charset=UTF-8','Accept: Application/json','X-Requested-With: XMLHttpRequest','Content-Type: application/octet-stream','Content-Type: application/download','Content-Type: application/force-download','Content-Transfer-Encoding: binary '));
+	curl_setopt($ch,CURLOPT_POSTFIELDS, "codicecomparto=PRO&codiceente=$ente&chi=Comune+di+Scanzano&cosa=$categoria");
+	// la riga successiva salva in locale il file spese.json
+	//curl_setopt($ch, CURLOPT_FILE, $file);
+	$output=curl_exec($ch);
+	curl_close($ch);
+	//echo $output;
+	$json=json_decode($output);
+
+	$msg="categoria:\t ".$json->cosa."\n";
+	foreach ($json->data as $mydata) {
+	  $msg.="<b>Voce:</b>\t".$mydata->descrizione_codice."\n";
+	  $msg.="<b>Codice siope:</b>\t".$mydata->codice_siope."\n";;
+	  $msg.="<b>Periodo $mydata->periodo/$mydata->anno spesi:</b>\t".($mydata->imp_uscite_att/100)."€\n";
+	  $msg.="<b>Nel 2014:</b>\t".($mydata->importo_2014/100)."€\n";
+	  $msg.="<b>Nel 2015:</b>\t".($mydata->importo_2015/100)."€\n";
+	  $msg.="<b>Progressivo </b>:\t".($mydata->importo_2016/100)."€\n";
+	  $msg.="============================\n";
+	}
+	return $msg;
+}
+function postData($data,$ora,$hum_gnd,$temp_gnd,$temp_env,$hum_env,$lux){
+  $formID = '1FAIpQLSesMrljN_dsv6WqkrSL-VHworuhMjSuHQXMTXSnulcmhvpq-w';
+  $formviewurl = 'https://docs.google.com/forms/d/e/' . $formID . '/viewform';
+  $formResponseurl = 'https://docs.google.com/forms/d/e/'. $formID . '/formResponse';
+  echo "Rilevazione dati del $data ore $ora ";
+	echo "Temperatura Terreno:\t $temp_gnd °C \nUmidità terreno:\t $hum_gnd %\n";
+	echo "Temperatura ambiente:\t $temp_env °C\nUmidità ambiente:\t $hum_env %\n";
+	echo "Luce:\t\t\t $lux lux";
+	$data  = array(	 'entry.1165999317' => $data ,
+					         'entry.1761570175' => $ora ,
+					         'entry.332227832'  => $hum_gnd ,
+					         'entry.1306307752' => $temp_gnd ,
+					         'entry.1529468871' => $temp_env ,
+					         'entry.1181153397' => $hum_env,
+					         'entry.952808496'  => $lux
+                 );
+
+$options = array(
+                    'http' => array(
+                        'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
+                        'method'  => 'POST',
+                        'content' => http_build_query($data)
+                    )
+                );
+  $context  = stream_context_create($options);
+  $result = file_get_contents($formResponseurl, false, $context);
+  /*if ($result === FALSE) {
+                           Handle error
+                         }*/
+  #var_dump($result);
+	#response = requests.post(formResponseurl, submissions)
+	#print submissions
+	return 1;
+}
+function startsWith($haystack, $needle) {
+    // search backwards starting from haystack length characters from the end
+    return $needle === "" || strrpos($haystack, $needle, -strlen($haystack)) !== false;
 }
 function grab_image($url,$saveto){
     $ch = curl_init ($url);
