@@ -3,7 +3,7 @@
 # @Date:   2016-08-23T15:43:18+02:00
 # @Email:  vicemail95@gmail.com
 # @Last modified by:   Vincenzo Cerbino
-# @Last modified time: 2016-11-19T12:55:53+01:00
+# @Last modified time: 2016-11-19T20:24:17+01:00
 # @License: MIT License
 
 
@@ -20,6 +20,10 @@ define('SEGNALAZIONE', '');
 define('ID_SEGNALAZIONE', '');
 define('WAPI','');
 define('ENTE',''); //codice ente soldipubblici
+define('URL_LOG', '');
+define('URL_USER', '');
+define('URL_USER_CSV','');
+
 // Your Openstreetmap Query settings
 define('AROUND', 2000);						//Number of meters to calculate radius to search
 define('MAX', 3);							//max number of points to search
